@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plata · Тренажёр метрик</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#1b1f27; --card2:#232834; --line:#2e3543;
+    --txt:#e8ebf0; --muted:#9aa3b2; --green:#58cc02; --green-d:#46a302;
+    --red:#ff4b4b; --blue:#1cb0f6; --gold:#ffc800; --purple:#ce82ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;align-items:center}
+  header{width:100%;max-width:680px;padding:16px 18px 8px;display:flex;align-items:center;gap:14px}
+  .logo{font-weight:800;font-size:18px;letter-spacing:.5px}
+  .logo span{color:var(--green)}
+  .stat{margin-left:auto;display:flex;gap:16px;align-items:center;font-weight:700;font-size:15px}
+  .stat .s{display:flex;align-items:center;gap:5px}
+  .bar{width:100%;max-width:680px;padding:0 18px}
+  .track{height:14px;background:var(--card2);border-radius:10px;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--green);border-radius:10px;transition:width .4s}
+  .tabs{display:flex;gap:8px;max-width:680px;width:100%;padding:14px 18px}
+  .tab{flex:1;padding:10px;border-radius:12px;background:var(--card);border:2px solid var(--line);
+    color:var(--muted);font-weight:700;cursor:pointer;text-align:center;font-size:14px}
+  .tab.active{color:var(--txt);border-color:var(--green);background:var(--card2)}
+  main{width:100%;max-width:680px;padding:8px 18px 40px;flex:1}
+  .blocktag{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;margin-bottom:14px}
+  .b-risk{background:#3a1f24;color:#ff8a8a}
+  .b-prof{background:#1f2f24;color:#7ee08a}
+  .b-unit{background:#23283a;color:#9db4ff}
+  .b-data{background:#2c2440;color:var(--purple)}
+
+  /* Flashcard */
+  .scene{perspective:1400px}
+  .card{position:relative;width:100%;min-height:340px;cursor:pointer;
+    transition:transform .5s;transform-style:preserve-3d}
+  .card.flipped{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    background:var(--card);border:2px solid var(--line);border-radius:20px;padding:26px;
+    display:flex;flex-direction:column}
+  .back{transform:rotateY(180deg)}
+  .front{align-items:center;justify-content:center;text-align:center}
+  .term{font-size:30px;font-weight:800;margin:6px 0}
+  .hint{color:var(--muted);font-size:14px;margin-top:18px}
+  .row{margin-bottom:14px}
+  .row .lab{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:4px}
+  .row .val{font-size:15px;line-height:1.5}
+  .formula{background:#0c1622;border:1px solid #143049;color:#9fe0ff;border-radius:10px;
+    padding:8px 12px;font-family:ui-monospace,Menlo,monospace;font-size:14px;display:inline-block}
+  .gotcha .val{color:var(--gold)}
+
+  .rate{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+  .rbtn{padding:12px 4px;border:none;border-radius:14px;font-weight:800;font-size:14px;cursor:pointer;color:#fff}
+  .r-again{background:var(--red)} .r-hard{background:#e6a700} .r-good{background:var(--blue)} .r-easy{background:var(--green)}
+  .rbtn small{display:block;font-size:10px;font-weight:600;opacity:.85;margin-top:2px}
+
+  /* Quiz */
+  .q{font-size:20px;font-weight:700;line-height:1.4;margin:6px 0 20px}
+  .opt{width:100%;text-align:left;padding:16px;margin-bottom:10px;border-radius:14px;
+    background:var(--card);border:2px solid var(--line);color:var(--txt);font-size:15px;font-weight:600;cursor:pointer}
+  .opt:hover{border-color:#3d4658}
+  .opt.correct{border-color:var(--green);background:#16291a}
+  .opt.wrong{border-color:var(--red);background:#2a1618}
+  .opt:disabled{cursor:default}
+  .next{width:100%;padding:15px;border:none;border-radius:16px;background:var(--green);
+    color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin-top:8px;box-shadow:0 4px 0 var(--green-d)}
+  .next:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-d)}
+  .feedback{font-weight:800;margin:12px 2px;font-size:15px}
+  .ok{color:var(--green)} .no{color:var(--red)}
+  .explain{background:var(--card2);border-radius:12px;padding:14px;font-size:14px;line-height:1.5;color:var(--muted);margin-bottom:14px}
+  .explain b{color:var(--txt)}
+  .done{text-align:center;padding:50px 10px}
+  .done h2{font-size:26px}
+  .ghost{background:transparent;border:2px solid var(--line);color:var(--muted);box-shadow:none}
+  .small{font-size:13px;color:var(--muted);text-align:center;margin-top:18px}
+  .reset{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Plata<span>·</span>метрики</div>
+  <div class="stat">
+    <div class="s" title="Стрик">🔥<span id="streak">0</span></div>
+    <div class="s" title="Освоено карт">⭐<span id="mastered">0</span></div>
+  </div>
+</header>
+<div class="bar"><div class="track"><div class="fill" id="fill"></div></div></div>
+<div class="tabs">
+  <div class="tab active" data-mode="learn">Карточки</div>
+  <div class="tab" data-mode="quiz">Квиз</div>
+</div>
+<main id="app"></main>
+
+<script>
+/* ===== Колода: метрики Plata (что значит / формула / кому нужна / подвох) ===== */
+const CARDS = [
+  // РИСК
+  {id:'cor',term:'Cost of Risk (CoR)',block:'risk',
+   meaning:'Во сколько обходится кредитный риск — сколько резервов банк начисляет на портфель за период. Для лендера это метрика №1.',
+   formula:'Начисленные резервы / Средний кредитный портфель',
+   who:'Менеджмент, риск, Finance, борд — напрямую режет прибыль.',
+   gotcha:'Рост CoR при росте портфеля нормален; тревога — когда растёт быстрее портфеля или хуже плана. Связан с IFRS 9 ECL.'},
+  {id:'npl',term:'NPL ratio',block:'risk',
+   meaning:'Какая часть портфеля «плохая» — обычно просрочка 90+ дней.',
+   formula:'Портфель с просрочкой 90+ dpd / Общий портфель',
+   who:'Риск, Finance, регулятор CNBV.',
+   gotcha:'Можно занизить списаниями/продажей плохих долгов — смотри вместе с NCO.'},
+  {id:'cov',term:'Coverage ratio',block:'risk',
+   meaning:'Насколько резервы покрывают плохие кредиты — «подушка» на случай потерь.',
+   formula:'Резервы / NPL (плохие кредиты)',
+   who:'Риск, регулятор, инвесторы.',
+   gotcha:'>100% = консервативно (перепокрыто), <100% = риск недорезерва.'},
+  {id:'nco',term:'NCO — Net Charge-Off',block:'risk',
+   meaning:'Сколько долга реально списали как безнадёжный, за вычетом возвратов. Это уже фактические потери (NPL — ещё нет).',
+   formula:'(Списания − Возвраты) / Средний портфель',
+   who:'Риск, Finance.',
+   gotcha:'У карт NCO исторически высокий (~4–4.5%): кредит необеспеченный.'},
+  {id:'ecl',term:'ECL = PD × LGD × EAD',block:'risk',
+   meaning:'Ожидаемые кредитные потери (IFRS 9). PD — вероятность дефолта, LGD — доля потерь при дефолте, EAD — сумма под риском.',
+   formula:'ECL = PD × LGD × EAD',
+   who:'Риск, Finance (расчёт резервов), регулятор.',
+   gotcha:'3 стадии: Stage 1 (12-мес ECL) → Stage 2 (lifetime, риск вырос) → Stage 3 (дефолт). Для карт LGD высокий.'},
+  {id:'roll',term:'Vintage / Roll rate',block:'risk',
+   meaning:'Vintage — как когорта выдач одного месяца портится со временем. Roll rate — вероятность перетечь в худшую корзину просрочки.',
+   formula:'Roll rate = баланс, ушедший в худшую корзину / баланс в исходной корзине',
+   who:'Риск, скоринг — раннее предупреждение качества портфеля.',
+   gotcha:'Прогнозирует потери ДО того, как кредит станет NPL.'},
+  // ПРИБЫЛЬНОСТЬ
+  {id:'nim',term:'NIM — Net Interest Margin',block:'prof',
+   meaning:'Чистая процентная маржа: разница между доходом по кредитам/картам и стоимостью фондирования.',
+   formula:'(Процентный доход − Процентный расход) / Средние работающие активы',
+   who:'Топ-менеджмент, борд, инвесторы — главный индикатор маржинальности.',
+   gotcha:'Знаменатель — работающие (доходные) активы, не все. У карт NIM высокий, но его съедает cost of risk.'},
+  {id:'nii',term:'NII — Net Interest Income',block:'prof',
+   meaning:'Абсолютная сумма чистого процентного дохода (NIM — то же, но в % от активов).',
+   formula:'Процентный доход − Процентный расход',
+   who:'Finance/FP&A для P&L; верхняя строка прибыли банка.',
+   gotcha:'Не путать с NIM: NII — деньги, NIM — процент.'},
+  {id:'arpc',term:'ARPC — Average Revenue Per Card',block:'prof',
+   meaning:'Сколько в среднем приносит одна активная карта.',
+   formula:'(Проценты + Комиссии + Interchange) / Активные карты',
+   who:'Продукт и Finance — монетизация портфеля.',
+   gotcha:'Смысл только в паре с CPAC: ARPC > CPAC = карта в плюсе.'},
+  {id:'cti',term:'Cost-to-Income (efficiency ratio)',block:'prof',
+   meaning:'Сколько операционных расходов уходит на единицу дохода. Ниже = лучше.',
+   formula:'Операционные расходы (OPEX) / Операционный доход',
+   who:'Менеджмент, инвесторы — эффективность.',
+   gotcha:'У молодого банка высокий (инвестируют в рост); важна динамика, а не уровень.'},
+  {id:'roe',term:'ROE / ROA',block:'prof',
+   meaning:'Отдача на капитал (ROE) и на активы (ROA).',
+   formula:'ROE = Чистая прибыль / Капитал · ROA = Чистая прибыль / Активы',
+   who:'Инвесторы, борд, регулятор.',
+   gotcha:'ROE можно раздуть плечом (leverage); регулятор смотрит на капитал отдельно.'},
+  // ЮНИТ-ЭКОНОМИКА
+  {id:'cac',term:'CAC — Customer Acquisition Cost',block:'unit',
+   meaning:'Сколько стоит привлечь одного клиента.',
+   formula:'Затраты на привлечение / Число новых клиентов',
+   who:'Маркетинг, продукт, Finance — эффективность роста.',
+   gotcha:'Считать на активного клиента, не на регистрацию.'},
+  {id:'ltv',term:'LTV / CLTV — Lifetime Value',block:'unit',
+   meaning:'Суммарная прибыль с клиента за всё время отношений.',
+   formula:'≈ (маржа на клиента за период × срок жизни) − затраты на обслуживание',
+   who:'Продукт, Finance, инвесторы.',
+   gotcha:'Здоровая планка LTV ≥ 3×CAC. Мультипродуктовые клиенты дают LTV выше.'},
+  {id:'rev',term:'Revolver rate',block:'unit',
+   meaning:'Доля клиентов, переносящих баланс на след. месяц (платят проценты), против тех, кто гасит полностью.',
+   formula:'Клиенты с переносимым балансом / Все активные клиенты',
+   who:'Продукт, Finance — револьверы дают процентный доход.',
+   gotcha:'Слишком высокий revolver rate = доход, но и рост кредитного риска.'},
+  {id:'cpac',term:'CPAC — Cost Per Active Card',block:'unit',
+   meaning:'Все операционные затраты на одну активную карту (саппорт, фрод, кешбэк, IT).',
+   formula:'Операционные затраты на карты / Активные карты',
+   who:'Finance, продукт — здоровье юнит-экономики.',
+   gotcha:'Ключевое сравнение — ARPC vs CPAC.'},
+  // ДАННЫЕ
+  {id:'sot',term:'Single source of truth',block:'data',
+   meaning:'Одна согласованная витрина данных, чтобы у всех совпадали цифры по одному KPI.',
+   formula:'— (принцип, не формула)',
+   who:'BA, Finance, продукт — устраняет расхождения в отчётах.',
+   gotcha:'Частая боль на интервью: у продукта и Finance разные числа → нет SoT.'},
+  {id:'etl',term:'ETL / ELT',block:'data',
+   meaning:'Пайплайн данных: Extract (извлечь) → Transform (преобразовать) → Load (загрузить) в DWH.',
+   formula:'Extract → Transform → Load',
+   who:'BA + дата-инженеры — автоматизация отчётности.',
+   gotcha:'ELT = трансформация уже внутри хранилища (современный подход с облачным DWH).'},
+  {id:'rec',term:'Reconciliation',block:'data',
+   meaning:'Сверка итогов отчёта с источником/контрольной суммой, чтобы доверять цифрам.',
+   formula:'Итог отчёта = Итог источника (GL) ?',
+   who:'BA, Finance — контроль качества данных, аудит.',
+   gotcha:'Для регуляторной отчётности обязательна + data lineage (откуда цифра).'},
+];
+
+const BLOCKMETA={risk:['b-risk','Риск'],prof:['b-prof','Прибыльность'],unit:['b-unit','Юнит-экономика'],data:['b-data','Данные']};
+
+/* ===== Состояние (localStorage): SRS по Лейтнеру ===== */
+const KEY='plata_trainer_v1';
+let state=load();
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.cards)return s;}catch(e){}
+  const cards={};CARDS.forEach(c=>cards[c.id]={box:0,due:0});
+  return {cards,streak:0,lastDay:null};
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function today(){return new Date().toISOString().slice(0,10);}
+function bumpStreak(){
+  const t=today();
+  if(state.lastDay===t)return;
+  const y=new Date(Date.now()-864e5).toISOString().slice(0,10);
+  state.streak=(state.lastDay===y)?state.streak+1:1;
+  state.lastDay=t;save();
+}
+const INTERVALS=[0,1,2,4,8,16]; // дни по боксам 0..5
+function masteredCount(){return CARDS.filter(c=>state.cards[c.id].box>=4).length;}
+function dueCards(){
+  const now=Date.now();
+  return CARDS.filter(c=>state.cards[c.id].due<=now);
+}
+function rate(id,q){ // q: 0 again,1 hard,2 good,3 easy
+  const c=state.cards[id];
+  if(q===0)c.box=0; else if(q===1)c.box=Math.max(0,c.box); else c.box=Math.min(5,c.box+1);
+  const days=INTERVALS[c.box]||16;
+  c.due=Date.now()+days*864e5*(q===0?0:1)+(q===0?60*1000:0); // again → через минуту
+  save();
+}
+
+/* ===== UI ===== */
+let mode='learn';
+const app=document.getElementById('app');
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  mode=t.dataset.mode;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
+  render();
+});
+function refreshHeader(){
+  document.getElementById('streak').textContent=state.streak;
+  document.getElementById('mastered').textContent=masteredCount()+'/'+CARDS.length;
+  document.getElementById('fill').style.width=(masteredCount()/CARDS.length*100)+'%';
+}
+function blockTag(b){const[m,l]=BLOCKMETA[b];return `<span class="blocktag ${m}">${l}</span>`;}
+
+/* ---- Режим Карточки (flip + SRS) ---- */
+let queue=[];
+function render(){
+  refreshHeader();
+  if(mode==='learn')renderLearn();else renderQuiz();
+}
+function renderLearn(){
+  if(!queue.length)queue=dueCards();
+  if(!queue.length){
+    app.innerHTML=`<div class="done"><h2>🎉 На сегодня всё</h2>
+      <p class="small">Все карточки повторены по интервалам. Загляни позже — слабые всплывут снова.<br><br>
+      Освоено: ${masteredCount()}/${CARDS.length}</p>
+      <button class="next ghost" onclick="queue=CARDS.slice();render()">Повторить всё равно</button>
+      <div style="margin-top:24px"><button class="reset" onclick="if(confirm('Сбросить весь прогресс?')){localStorage.removeItem(KEY);state=load();queue=[];render();}">сбросить прогресс</button></div></div>`;
+    return;
+  }
+  const c=queue[0];
+  app.innerHTML=`
+    ${blockTag(c.block)}
+    <div class="scene"><div class="card" id="fc">
+      <div class="face front">
+        <div class="hint">Карточка · ${queue.length} в очереди</div>
+        <div class="term">${c.term}</div>
+        <div class="hint">Вспомни: что значит · формула · кому нужна.<br>Нажми, чтобы перевернуть 👆</div>
+      </div>
+      <div class="face back">
+        <div class="row"><div class="lab">Что значит</div><div class="val">${c.meaning}</div></div>
+        <div class="row"><div class="lab">Как считается</div><div class="val"><span class="formula">${c.formula}</span></div></div>
+        <div class="row"><div class="lab">Кому нужна</div><div class="val">${c.who}</div></div>
+        <div class="row gotcha"><div class="lab">⚠ Подвох на интервью</div><div class="val">${c.gotcha}</div></div>
+      </div>
+    </div></div>
+    <div id="rate" class="rate" style="display:none">
+      <button class="rbtn r-again" onclick="answer(0)">Не знал<small>снова</small></button>
+      <button class="rbtn r-hard" onclick="answer(1)">Трудно<small>скоро</small></button>
+      <button class="rbtn r-good" onclick="answer(2)">Помню<small>+1</small></button>
+      <button class="rbtn r-easy" onclick="answer(3)">Легко<small>+1</small></button>
+    </div>`;
+  const fc=document.getElementById('fc');
+  fc.onclick=()=>{fc.classList.add('flipped');document.getElementById('rate').style.display='grid';};
+}
+window.answer=function(q){
+  const c=queue.shift();
+  rate(c.id,q);
+  bumpStreak();
+  render();
+};
+
+/* ---- Режим Квиз (multiple choice) ---- */
+let quizPool=[],quizCur=null,answered=false;
+function buildQuiz(){
+  // тип вопроса чередуем: formula / meaning / who
+  quizPool=shuffle(CARDS.slice()).map(c=>{
+    const types=['formula','meaning','who'];
+    const t=types[Math.floor(rngFor(c.id)*types.length)];
+    return {card:c,type:t};
+  });
+}
+function rngFor(id){let h=0;for(const ch of id)h=(h*31+ch.charCodeAt(0))%997;return (h%100)/100;}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const QLABEL={formula:'Как считается',meaning:'Что значит',who:'Кому нужна / зачем'};
+function renderQuiz(){
+  if(!quizPool.length){buildQuiz();}
+  if(quizCur===null){quizCur=quizPool.shift();answered=false;}
+  if(!quizCur){
+    app.innerHTML=`<div class="done"><h2>✅ Квиз пройден</h2>
+      <button class="next" onclick="quizPool=[];quizCur=null;render()">Ещё раунд</button></div>`;
+    return;
+  }
+  const {card,type}=quizCur;
+  // правильный + 3 дистрактора того же поля
+  const correct=card[type];
+  const others=shuffle(CARDS.filter(c=>c.id!==card.id&&c[type]&&c[type]!==correct)).slice(0,3).map(c=>c[type]);
+  const opts=shuffle([correct,...others]);
+  app.innerHTML=`
+    ${blockTag(card.block)}
+    <div class="q">${QLABEL[type]}: <b>${card.term}</b>?</div>
+    <div id="opts">${opts.map(o=>`<button class="opt" onclick="pick(this)" data-correct="${o===correct}">${o}</button>`).join('')}</div>
+    <div id="fb"></div>`;
+}
+window.pick=function(btn){
+  if(answered)return;answered=true;
+  const ok=btn.dataset.correct==='true';
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.correct==='true')b.classList.add('correct');
+    else if(b===btn)b.classList.add('wrong');
+  });
+  const c=quizCur.card;
+  rate(c.id,ok?2:0);bumpStreak();refreshHeader();
+  document.getElementById('fb').innerHTML=
+    `<div class="feedback ${ok?'ok':'no'}">${ok?'✔ Верно':'✗ Не то — запомни:'}</div>
+     <div class="explain"><b>${c.term}.</b> ${c.meaning}<br><br>
+       <b>Формула:</b> ${c.formula}<br><b>Кому:</b> ${c.who}</div>
+     <button class="next" onclick="quizCur=null;render()">Дальше →</button>`;
+};
+
+render();
+</script>
+</body>
+</html>
